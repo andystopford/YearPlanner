@@ -24,6 +24,7 @@ sys.path.append("./UI")
 from PyQt4 import QtCore, QtGui
 from MainWindow import Ui_MainWindow
 from almanac import*
+import datetime
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -32,6 +33,9 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        today = datetime.date.today()
+        self.year = today.year
+
         months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
         "Aug", "Sept", "Oct", "Nov", "Dec"]
         days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
@@ -40,21 +44,36 @@ class MainWindow(QtGui.QMainWindow):
           "Fri", "Sat", "Sun","Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
            "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon",
            "Tue"]
-
+        
         horiz_header = self.ui.table.horizontalHeader()
         horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
         vert_header = self.ui.table.verticalHeader()
         vert_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        vehic_header = self.ui.table_vehicles.horizontalHeader()
-        vehic_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        driver_header = self.ui.table_drivers.horizontalHeader()
-        driver_header.setResizeMode(QtGui.QHeaderView.Stretch)
+        
+        self.ui.button_back.clicked.connect(self.year_back)
+        self.ui.button_forward.clicked.connect(self.year_forward)
 
-        self.init_calendar()
+        self.init_calendar(self.year)
+        self.ui.table.setHorizontalHeaderLabels(days)
+        self.ui.table.setVerticalHeaderLabels(months)
 
-    def init_calendar(self):
-        Year(self.ui.table, 2015)
-        self.ui.label.setText("2015")
+        self.color = QtGui.QColor(self.palette().color(QtGui.QPalette.Highlight))
+        self.color.setRgb(0,0,255)
+        self.color.setAlpha(64)
+
+    def year_back(self):
+        self.year -= 1
+        self.init_calendar(self.year)
+
+    def year_forward(self):
+        self.year += 1
+        self.init_calendar(self.year)
+
+    def init_calendar(self, year):
+        self.ui.table.clear()
+        Year(self.ui.table, year)
+        self.ui.label.setText(str(year)) 
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
