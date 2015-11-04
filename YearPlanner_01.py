@@ -21,45 +21,46 @@
 import sys
 sys.path.append("./modules")
 sys.path.append("./UI")
-from PyQt4 import QtCore, QtGui
-from MainWindow import Ui_MainWindow
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 from almanac import*
+from TableModel import*
 import datetime
+import calendar
+
+months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+"Aug", "Sept", "Oct", "Nov", "Dec"]
+days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue",
+ "Wed", "Thu", "Fri", "Sat", "Sun","Mon", "Tue", "Wed", "Thu",
+  "Fri", "Sat", "Sun","Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+   "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon",
+   "Tue"]
 
 
-class MainWindow(QtGui.QMainWindow):
-
-    def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
+class MainWindow(QTableView):
+    def __init__(self, *args):
+        QTableView.__init__(self, *args)
         today = datetime.date.today()
         self.year = today.year
-
-        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
-        "Aug", "Sept", "Oct", "Nov", "Dec"]
-        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
-        "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue",
-         "Wed", "Thu", "Fri", "Sat", "Sun","Mon", "Tue", "Wed", "Thu",
-          "Fri", "Sat", "Sun","Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
-           "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon",
-           "Tue"]
+        self.cal = calendar.Calendar()
         
-        horiz_header = self.ui.table.horizontalHeader()
-        horiz_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        vert_header = self.ui.table.verticalHeader()
-        vert_header.setResizeMode(QtGui.QHeaderView.Stretch)
-        
-        self.ui.button_back.clicked.connect(self.year_back)
-        self.ui.button_forward.clicked.connect(self.year_forward)
+        horiz_header = HorizHeader(self, days)
+        self.setHorizontalHeader(horiz_header)
+        horiz_header.setResizeMode(QHeaderView.Stretch)
+        horiz_header.setMinimumSectionSize(37)
 
+        vert_header = VertHeader(self, months)
+        self.setVerticalHeader(vert_header)
+        vert_header.setResizeMode(QHeaderView.Stretch)
+        vert_header.setMinimumSectionSize(52)
+        
+        #self.ui.button_back.clicked.connect(self.year_back)
+        #self.ui.button_forward.clicked.connect(self.year_forward)
+        self.col1 = QBrush(QColor(100, 250, 213))
+        self.col2 = QBrush(QColor(200, 150, 213))
         self.init_calendar(self.year)
-        self.ui.table.setHorizontalHeaderLabels(days)
-        self.ui.table.setVerticalHeaderLabels(months)
-
-        self.color = QtGui.QColor(self.palette().color(QtGui.QPalette.Highlight))
-        self.color.setRgb(0,0,255)
-        self.color.setAlpha(64)
+        
 
     def year_back(self):
         self.year -= 1
@@ -70,13 +71,38 @@ class MainWindow(QtGui.QMainWindow):
         self.init_calendar(self.year)
 
     def init_calendar(self, year):
-        self.ui.table.clear()
-        Year(self.ui.table, year)
-        self.ui.label.setText(str(year)) 
+        year_instance = Year(self, year)
+        months = year_instance.get_months()
+        self.tablemodel = TableModel(months)
+        self.setModel(self.tablemodel)
+
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            ep = event.pos() # QPoint
+            ind = self.indexAt(ep)  #QModelIndex
+            year_instance = Year(self, self.year)
+            months = year_instance.get_months()
+            print ind.column(), ind.row()
+            col = ind.column()
+            row = ind.row()
+            month = months[row]
+            day = month[col]
+            print day, row + 1, self.year   # Date in dd/mm/yr format
+
+        if event.button() == Qt.RightButton:
+            ep = event.pos() # QPoint
+            ind = self.indexAt(ep)  #QModelIndex
+            date_data = self.tablemodel.itemData(ind)    #Data at this index
+            day = date_data[0].toString() #date_data[8].type() returns cell's QBrush
+            col = ind.column()
+            row = ind.row()
+            self.tablemodel.colour_cell(ind, Qt.BackgroundRole, QBrush(QColor(200, 150, 213)))
+
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     myapp = MainWindow()
     myapp.show()
     sys.exit(app.exec_())
